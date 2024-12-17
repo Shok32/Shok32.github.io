@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
@@ -232,16 +233,14 @@
       <button class="info-button" onclick="openInfoModal()">О проекте</button>
   </footer>
 
-  <!-- Модальное окно для просмотра изображения -->
   <div id="myModal" class="modal">
       <span class="close" onclick="closeModal()">&times;</span>
       <div class="modal-content">
-          <img id="modalImage">
+          <img id="modalImage" style="max-width: 100%; max-height: 80vh;">
           <button class="share-button" id="shareButton">Поделиться</button>
       </div>
   </div>
 
-  <!-- Модальное окно для информации о проекте -->
   <div id="infoModal" class="modal">
       <span class="close" onclick="closeInfoModal()">&times;</span>
       <div class="modal-content">
@@ -256,8 +255,18 @@
   </div>
 
   <script>
-      window.onload = function() {
-          loadTheme();
+      let db;
+
+      // Открытие базы данных
+      const request = indexedDB.open("WallpapersDB", 1);
+
+      request.onupgradeneeded = function(event) {
+          db = event.target.result;
+          db.createObjectStore("wallpapers", { keyPath: "id" });
+      };
+
+      request.onsuccess = function(event) {
+          db = event.target.result;
           loadWallpapers();
       };
 
@@ -275,19 +284,71 @@
           if (file) {
               const reader = new FileReader();
               reader.onload = function(e) {
-                  addWallpaper(e.target.result);
-                  saveToLocalStorage(e.target.result);
+                  const wallpaperData = { id: Date.now(), src: e.target.result };
+                  addWallpaperToDB(wallpaperData);
                   fileInput.value = ''; // Очистка поля ввода
               };
               reader.readAsDataURL(file);
           } else if (url) {
-              addWallpaper(url);
-              saveToLocalStorage(url);
+              const wallpaperData = { id: Date.now(), src: url };
+              addWallpaperToDB(wallpaperData);
               urlInput.value = ''; // Очистка поля ввода
           } else {
               alert('Пожалуйста, выберите изображение или введите URL.');
           }
       });
+
+      function addWallpaperToDB(wallpaperData) {
+          const transaction = db.transaction(["wallpapers"], "readwrite");
+          const store = transaction.objectStore("wallpapers");
+          const request = store.add(wallpaperData);
+          request.onsuccess = () => {
+              addWallpaper(wallpaperData.src); // Добавляем обои на страницу
+          };
+          request.onerror = () => {
+              console.error("Ошибка при добавлении в IndexedDB");
+          };
+      }
+
+      function loadWallpapers() {
+          const transaction = db.transaction(["wallpapers"], "readonly");
+          const store = transaction.objectStore("wallpapers");
+          const request = store.getAll();
+
+          request.onsuccess = function(event) {
+              const wallpapers = event.target.result;
+              wallpaperContainer.innerHTML = '';
+              wallpapers.forEach(wallpaper => {
+                  addWallpaper(wallpaper.src);
+              });
+          };
+      }
+
+      function deleteImage(button) {
+          const wallpaperDiv = button.parentElement;
+          const imageSrc = wallpaperDiv.querySelector('img').src;
+
+          wallpaperDiv.classList.add('fade-out');
+
+          setTimeout(() => {
+              wallpaperContainer.removeChild(wallpaperDiv);
+              removeFromDB(imageSrc);
+          }, 500);
+      }
+
+      function removeFromDB(src) {
+          const transaction = db.transaction(["wallpapers"], "readwrite");
+          const store = transaction.objectStore("wallpapers");
+          const request = store.getAll();
+
+          request.onsuccess = function(event) {
+              const wallpapers = event.target.result;
+              const wallpaperToDelete = wallpapers.find(wallpaper => wallpaper.src === src);
+              if (wallpaperToDelete) {
+                  store.delete(wallpaperToDelete.id);
+              }
+          };
+      }
 
       function addWallpaper(src) {
           const wallpaperDiv = document.createElement('div');
@@ -322,34 +383,6 @@
           modal.style.display = "none";
       }
 
-      function deleteImage(button) {
-          const wallpaperDiv = button.parentElement;
-          const imageSrc = wallpaperDiv.querySelector('img').src;
-
-          wallpaperDiv.classList.add('fade-out');
-
-          setTimeout(() => {
-              wallpaperContainer.removeChild(wallpaperDiv);
-              removeFromLocalStorage(imageSrc);
-          }, 500);
-      }
-
-      function saveToLocalStorage(src) {
-          let wallpapers = JSON.parse(localStorage.getItem('wallpapers')) || [];
-          if (!wallpapers.includes(src)) {
-              wallpapers.push(src);
-              localStorage.setItem('wallpapers', JSON.stringify(wallpapers));
-          }
-      }
-
-      function loadWallpapers() {
-          const wallpapers = JSON.parse(localStorage.getItem('wallpapers')) || [];
-          wallpaperContainer.innerHTML = '';
-          wallpapers.forEach(src => {
-              addWallpaper(src);
-          });
-      }
-
       function downloadImage(imageSrc) {
           const a = document.createElement('a');
           a.href = imageSrc;
@@ -357,12 +390,6 @@
           document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);
-      }
-
-      function removeFromLocalStorage(src) {
-          let wallpapers = JSON.parse(localStorage.getItem('wallpapers')) || [];
-          wallpapers = wallpapers.filter(wallpaper => wallpaper !== src);
-          localStorage.setItem('wallpapers', JSON.stringify(wallpapers));
       }
 
       function toggleTheme() {
@@ -408,6 +435,15 @@
       function closeInfoModal() {
           document.getElementById("infoModal").style.display = "none";
       }
+
+      window.onclick = function(event) {
+          if (event.target === modal) {
+              closeModal();
+          }
+          if (event.target === document.getElementById("infoModal")) {
+              closeInfoModal();
+          }
+      };
   </script>
 </body>
 </html>
