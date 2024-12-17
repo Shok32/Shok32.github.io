@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Обои</title>
   <style>
-      body {
+    body {
           font-family: Arial, sans-serif;
           margin: 0;
           padding: 0;
@@ -213,49 +213,78 @@
           background-color: #0056b3;
       }
   </style>
+  <script>
+    // Функция для защиты от DDoS-атак
+    function protectFromDDoS() {
+      // Получаем текущее время в миллисекундах
+      const currentTime = new Date().getTime();
+
+      // Проверяем, если последний запрос был менее 1 секунды назад
+      if (localStorage.getItem('lastRequestTime') && currentTime - localStorage.getItem('lastRequestTime') < 1000) {
+        // Если да, то блокируем дальнейшие запросы на 5 секунд
+        alert('Вы отправляете слишком много запросов. Пожалуйста, подождите 5 секунд перед следующим запросом.');
+        return false;
+      }
+
+      // Сохраняем время последнего запроса в localStorage
+      localStorage.setItem('lastRequestTime', currentTime);
+
+      // Разрешаем дальнейшие действия
+      return true;
+    }
+
+    // Применяем защиту от DDoS-атак к событиям клика
+    document.addEventListener('click', function(event) {
+      if (!protectFromDDoS()) {
+        event.preventDefault();
+      }
+    });
+
+    
+  </script>
 </head>
 <body>
   <header>
-      <h1>Моя коллекция обоев</h1>
-      <button class="theme-toggle" onclick="toggleTheme()">Сменить тему</button>
+    <h1>Моя коллекция обоев</h1>
+    <button class="theme-toggle" onclick="toggleTheme()">Сменить тему</button>
   </header>
   <div class="upload-form">
-      <h2>Загрузить новые обои</h2>
-      <input type="file" id="fileInput" accept="image/*">
-      <input type="text" id="urlInput" placeholder="Введите URL изображения">
-      <button id="uploadButton">Загрузить</button>
+    <h2>Загрузить новые обои</h2>
+    <input type="file" id="fileInput" accept="image/*">
+    <input type="text" id="urlInput" placeholder="Введите URL изображения">
+    <button id="uploadButton">Загрузить</button>
   </div>
   <div class="container" id="wallpaperContainer">
-      <!-- Здесь будут отображаться загруженные обои -->
+    <!-- Здесь будут отображаться загруженные обои -->
   </div>
   <footer>
-      <p>&copy; Created by Shokov</p>
-      <button class="info-button" onclick="openInfoModal()">О проекте</button>
+    <p>&copy; Created by Shokov</p>
+    <button class="info-button" onclick="openInfoModal()">О проекте</button>
   </footer>
 
   <div id="myModal" class="modal">
-      <span class="close" onclick="closeModal()">&times;</span>
-      <div class="modal-content">
-          <img id="modalImage" style="max-width: 100%; max-height: 80vh;">
-          <button class="share-button" id="shareButton">Поделиться</button>
-      </div>
+    <span class="close" onclick="closeModal()">&times;</span>
+    <div class="modal-content">
+      <img id="modalImage" style="max-width: 100%; max-height: 80vh;">
+      <button class="share-button" id="shareButton">Поделиться</button>
+    </div>
   </div>
 
   <div id="infoModal" class="modal">
-      <span class="close" onclick="closeInfoModal()">&times;</span>
-      <div class="modal-content">
-          <h2>О проекте</h2>
-          <p>
-Зачем мы создали этот ресурс? Мы создали контейнер для сохранения ваших любимых изображений на компьютере. Это позволит вам быстро находить их и освободит место на устройстве. Кроме того, вы сможете поделиться ссылкой на обои с друзьями и коллегами.
-</p>
-<p1>
-  Как это работает? Вы можете загрузить свои обои на наш сайт, выбрав один из поддерживаемых форматов: jpeg, jpg или png. Также предусмотрена загрузка обоев по ссылке. После этого вы сможете посмотреть сохранённые обои, просто нажав на них. Если вы передумали сохранять изображение, вы можете удалить его с сайта.
-          </p1>
-      </div>
+    <span class="close" onclick="closeInfoModal()">&times;</span>
+    <div class="modal-content">
+      <h2>О проекте</h2>
+      <p>
+        Зачем мы создали этот ресурс? Мы создали контейнер для сохранения ваших любимых изображений на компьютере. Это позволит вам быстро находить их и освободит место на устройстве. Кроме того, вы сможете поделиться ссылкой на обои с друзьями и коллегами.
+      </p>
+      <p1>
+        Как это работает? Вы можете загрузить свои обои на наш сайт, выбрав один из поддерживаемых форматов: jpeg, jpg или png. Также предусмотрена загрузка обоев по ссылке. После этого вы сможете посмотреть сохранённые обои, просто нажав на них. Если вы передумали сохранять изображение, вы можете удалить его с сайта.
+      </p1>
+    </div>
   </div>
 
   <script>
-      let db;
+    let db;
 
       // Открытие базы данных
       const request = indexedDB.open("WallpapersDB", 1);
