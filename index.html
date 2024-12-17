@@ -215,29 +215,33 @@
   </style>
   <script>
     // Функция для защиты от DDoS-атак
-    function protectFromDDoS() {
-      // Получаем текущее время в миллисекундах
-      const currentTime = new Date().getTime();
+function protectFromDDoS() {
+  const currentTime = new Date().getTime();
+  const lastRequestTime = localStorage.getItem('lastRequestTime');
 
-      // Проверяем, если последний запрос был менее 1 секунды назад
-      if (localStorage.getItem('lastRequestTime') && currentTime - localStorage.getItem('lastRequestTime') < 1000) {
-        // Если да, то блокируем дальнейшие запросы на 5 секунд
-        alert('Вы отправляете слишком много запросов. Пожалуйста, подождите 5 секунд перед следующим запросом.');
-        return false;
-      }
+  // Если последний запрос был менее 1 секунды назад
+  if (lastRequestTime && currentTime - lastRequestTime < 1000) {
+    // Увеличиваем время блокировки на 1 секунду
+    const blockDuration = parseInt(localStorage.getItem('blockDuration') || '5000') + 1000;
+    localStorage.setItem('blockDuration', blockDuration);
 
-      // Сохраняем время последнего запроса в localStorage
-      localStorage.setItem('lastRequestTime', currentTime);
+    // Выводим сообщение с оставшимся временем блокировки
+    const remainingTime = blockDuration - (currentTime - lastRequestTime);
+    alert(`Вы отправляете слишком много запросов. Пожалуйста, подождите ${Math.ceil(remainingTime / 1000)} секунд перед следующим запросом.`);
+    return false;
+  }
 
-      // Разрешаем дальнейшие действия
-      return true;
-    }
+  // Сбрасываем время блокировки до 5 секунд
+  localStorage.setItem('blockDuration', 5000);
+  localStorage.setItem('lastRequestTime', currentTime);
+  return true;
+}
 
     // Применяем защиту от DDoS-атак к событиям клика
    // document.addEventListener('click', function(event) {
     //  if (!protectFromDDoS()) {
-      //  event.preventDefault();
-    //  }
+     //   event.preventDefault();
+     // }
    // });
 
     
